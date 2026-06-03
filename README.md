@@ -25,7 +25,7 @@ Amazon Bedrock 现已支持 OpenAI GPT-5.5 和 GPT-5.4 模型，通过 `bedrock-
 ## 第二步：安装依赖
 
 ```bash
-pip install openai
+pip install -r requirements.txt
 ```
 
 ## 第三步：配置环境变量
