@@ -1,5 +1,4 @@
 generate_pdf.py
-*.pdf
 __pycache__/
 *.pyc
 .env
