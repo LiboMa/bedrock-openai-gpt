@@ -16,19 +16,19 @@ client = OpenAI(
     base_url=os.environ.get("OPENAI_BASE_URL", "https://bedrock-mantle.us-east-2.api.aws/openai/v1"),
 )
 
+# Responses API uses a FLAT tool schema: name/description/parameters
+# sit at the top level alongside "type" (NOT nested under "function").
 tools = [
     {
         "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get the current weather for a location.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "City name"},
-                },
-                "required": ["location"],
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string", "description": "City name"},
             },
+            "required": ["location"],
         },
     }
 ]

@@ -17,19 +17,19 @@ client = OpenAI(
     base_url=os.environ.get("OPENAI_BASE_URL", f"https://bedrock-mantle.{REGION}.api.aws/openai/v1"),
 )
 
+# Responses API uses a FLAT tool schema: name/description/parameters
+# sit at the top level alongside "type" (NOT nested under "function").
 tools = [
     {
         "type": "function",
-        "function": {
-            "name": "get_stock_price",
-            "description": "Get the current stock price for a given ticker symbol.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "ticker": {"type": "string", "description": "Stock ticker symbol, e.g. AMZN"},
-                },
-                "required": ["ticker"],
+        "name": "get_stock_price",
+        "description": "Get the current stock price for a given ticker symbol.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "ticker": {"type": "string", "description": "Stock ticker symbol, e.g. AMZN"},
             },
+            "required": ["ticker"],
         },
     }
 ]

@@ -127,19 +127,19 @@ from openai import OpenAI
 
 client = OpenAI()
 
+# Responses API 使用扁平结构：name/description/parameters 与 type 同级
+# （不要嵌套在 "function" 下，否则会报 missing field `name`）
 tools = [
     {
         "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "获取指定城市的天气",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string", "description": "城市名称"},
-                },
-                "required": ["location"],
+        "name": "get_weather",
+        "description": "获取指定城市的天气",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string", "description": "城市名称"},
             },
+            "required": ["location"],
         },
     }
 ]
