@@ -214,5 +214,6 @@ A: 所有处理都在你选择的 Bedrock Region 内完成，数据不会跨区�
 - [GPT-5.4 模型卡](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-54.html)
 - [Amazon Bedrock 定价](https://aws.amazon.com/bedrock/pricing/)
 - [OpenAI on Amazon Bedrock](https://aws.amazon.com/bedrock/openai/)
+- [OpenAI Codex on Amazon Bedrock](https://developers.openai.com/codex/amazon-bedrock)（在 Bedrock 上使用 Codex）
 - [Bedrock API Key 管理](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html)
 - [区域可用性](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html)
