@@ -15,11 +15,13 @@ import os
 import subprocess
 import sys
 
-import botocore.session
+# NOTE: botocore is imported lazily inside the live-test path (see _get_credentials)
+# so that `python3 test_all.py --syntax-only` runs without botocore installed.
 
 # --- Scripts to syntax-check -------------------------------------------------
 
 SCRIPTS = [
+    "bedrock_endpoints.py",
     "gpt55_responses.py",
     "gpt55_reasoning.py",
     "gpt55_streaming.py",
@@ -28,6 +30,8 @@ SCRIPTS = [
     "gpt54_streaming.py",
     "gpt54_tool_calling.py",
     "gpt54_multi_region.py",
+    "gpt56_chat_completions.py",
+    "gpt6_bedrock_runtime.py",
 ]
 
 
@@ -50,14 +54,29 @@ def syntax_check():
 
 # --- Live API test (AWS SigV4 via curl) --------------------------------------
 
-_CREDENTIALS = botocore.session.get_session().get_credentials()
+_CREDENTIALS = None
+
+
+def _get_credentials():
+    """Lazily resolve AWS credentials from the standard credential chain.
+
+    botocore is imported here (not at module top level) so that the
+    syntax-only mode does not require botocore to be installed.
+    """
+    global _CREDENTIALS
+    if _CREDENTIALS is None:
+        import botocore.session
+
+        _CREDENTIALS = botocore.session.get_session().get_credentials()
+    return _CREDENTIALS
 
 
 def _post(region, body, timeout=60):
     """POST a JSON body to the responses endpoint using AWS SigV4. Returns parsed JSON."""
-    if _CREDENTIALS is None:
+    credentials = _get_credentials()
+    if credentials is None:
         raise RuntimeError("No AWS credentials found in the standard credential chain.")
-    creds = _CREDENTIALS.get_frozen_credentials()
+    creds = credentials.get_frozen_credentials()
 
     cmd = [
         "curl", "-s", "--fail-with-body",
@@ -146,10 +165,12 @@ def live_tests():
         ("openai.gpt-5.5", "us-east-2"),
         ("openai.gpt-5.4", "us-east-2"),
         ("openai.gpt-5.4", "us-west-2"),
+        ("openai.gpt-5.6-sol", "us-east-1"),
     ]
     tool_targets = [
         ("openai.gpt-5.5", "us-east-2"),
         ("openai.gpt-5.4", "us-east-2"),
+        ("openai.gpt-5.6-sol", "us-east-1"),
     ]
 
     all_ok = True
