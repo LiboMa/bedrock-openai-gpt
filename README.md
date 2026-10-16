@@ -108,6 +108,8 @@ export OPENAI_BASE_URL="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v
 ```
 
 > **注意**：两种端点的基础路径都是 `openai/v1`，与其他模型使用的 `v1` 路径不同。SDK 的 `base_url` 设置到 `/openai/v1` 即可，SDK 会自动拼接 `/responses` 或 `/chat/completions`。
+>
+> **端点与模型 ID 必须配对**：`bedrock-mantle` 配基础 ID（`openai.gpt-5.5`），`bedrock-runtime` 配 CRIS ID（`us.openai.gpt-5.5` / `global.openai.gpt-5.5`），混用会调用失败。为了照抄即可运行，下面每个示例都**在代码里显式传入 `base_url`**，不依赖上面导出的 `OPENAI_BASE_URL`；每个标题都标明了所用端点。
 
 ## 第四步：运行测试
 
@@ -116,7 +118,8 @@ export OPENAI_BASE_URL="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v
 ```python
 from openai import OpenAI
 
-client = OpenAI()
+# bedrock-mantle（Metal API）+ 基础 ID
+client = OpenAI(base_url="https://bedrock-mantle.us-east-1.api.aws/openai/v1")
 
 response = client.responses.create(
     model="openai.gpt-5.5",
@@ -131,8 +134,8 @@ print(response.output_text)
 ```python
 from openai import OpenAI
 
-# OPENAI_BASE_URL 指向 bedrock-runtime 时，必须使用 CRIS ID
-client = OpenAI()
+# bedrock-runtime（Runtime API）+ CRIS ID（不能用基础 ID）
+client = OpenAI(base_url="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1")
 
 response = client.responses.create(
     model="us.openai.gpt-5.5",  # 或 global.openai.gpt-5.5
@@ -142,15 +145,18 @@ response = client.responses.create(
 print(response.output_text)
 ```
 
-### Chat Completions API 调用（两种端点均支持）
+### Chat Completions API 调用（bedrock-mantle，使用基础 ID；两种端点均支持）
 
 ```python
 from openai import OpenAI
 
-client = OpenAI()
+# bedrock-mantle（Metal API）+ 基础 ID。
+# 改用 bedrock-runtime 时须同时改两处：
+#   base_url="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1"
+#   model="us.openai.gpt-5.6-sol"（或 global.openai.gpt-5.6-sol）
+client = OpenAI(base_url="https://bedrock-mantle.us-east-1.api.aws/openai/v1")
 
 completion = client.chat.completions.create(
-    # bedrock-mantle 用基础 ID；bedrock-runtime 用 CRIS ID（如 us.openai.gpt-5.6-sol）
     model="openai.gpt-5.6-sol",
     messages=[
         {"role": "system", "content": "你是一名资深 AWS 架构师，回答要简洁实用。"},
@@ -161,12 +167,14 @@ completion = client.chat.completions.create(
 print(completion.choices[0].message.content)
 ```
 
-### 多轮对话 + 推理控制
+### 多轮对话 + 推理控制（bedrock-mantle，使用基础 ID）
 
 ```python
 from openai import OpenAI
 
-client = OpenAI()
+# bedrock-mantle（Metal API）+ 基础 ID；
+# 走 bedrock-runtime 时改用 runtime base_url 与 us.openai.gpt-6-astra
+client = OpenAI(base_url="https://bedrock-mantle.us-east-1.api.aws/openai/v1")
 
 response = client.responses.create(
     model="openai.gpt-6-astra",
@@ -186,12 +194,13 @@ response = client.responses.create(
 print(response.output_text)
 ```
 
-### 流式输出
+### 流式输出（bedrock-mantle，使用基础 ID）
 
 ```python
 from openai import OpenAI
 
-client = OpenAI()
+# bedrock-mantle（Metal API）+ 基础 ID
+client = OpenAI(base_url="https://bedrock-mantle.us-east-1.api.aws/openai/v1")
 
 stream = client.responses.create(
     model="openai.gpt-5.5",
@@ -205,12 +214,13 @@ for event in stream:
 print()
 ```
 
-### 工具调用（Function Calling）
+### 工具调用（Function Calling，bedrock-mantle，使用基础 ID）
 
 ```python
 from openai import OpenAI
 
-client = OpenAI()
+# bedrock-mantle（Metal API）+ 基础 ID
+client = OpenAI(base_url="https://bedrock-mantle.us-east-1.api.aws/openai/v1")
 
 # Responses API 使用扁平结构：name/description/parameters 与 type 同级
 # （不要嵌套在 "function" 下，否则会报 missing field `name`）
