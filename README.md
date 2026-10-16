@@ -278,19 +278,30 @@ https://bedrock-runtime.{region}.amazonaws.com/openai/v1/chat/completions
 
 > 使用 `bedrock-runtime` 时请用 CRIS ID：Geo 用 `us.openai.<model>`，Global 用 `global.openai.<model>`。
 
-### 示例：各模型区域覆盖（以官方模型卡为准）
+### 各模型可用区域（按模型列出）
 
-- **GPT-5.5**
-  - `bedrock-mantle`：us-east-1、us-east-2
-  - `bedrock-runtime`：覆盖多个区域——us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、mx-central-1，eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3，ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、me-central-1、me-south-1、af-south-1、sa-east-1
-- **GPT-5.4**
-  - `bedrock-mantle`：us-east-1、us-east-2、us-west-2，以及 **us-gov-west-1 (GovCloud US-West)**
-  - `bedrock-runtime`：与 GPT-5.5 类似的多区域覆盖
-- **GPT-6 Astra**
-  - `bedrock-mantle`：us-east-1、us-west-2（Ultrafast 仅在 us-east-1 的 regional Mantle 提供；us-west-2 的 regional Mantle 仅支持 Standard）
-  - `bedrock-runtime`：us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、eu-central-1、eu-north-1、eu-west-1/2/3、ap-northeast-1/2/3、ap-south-1、ap-southeast-1/2、sa-east-1
-- **GPT-5.6 Sol / Terra / Luna、GPT-6 / 6.1 系列、GPT OSS 系列**：各自区域覆盖见对应模型卡。
+下表按**模型**列出 `bedrock-mantle`（Metal API）与 `bedrock-runtime`（Runtime API）两端点的区域覆盖，以及是否适用 Geo / Global CRIS。CRIS 仅在 `bedrock-runtime` 上生效（用 `us.`/`global.` 前缀的 ID）；`bedrock-mantle` 使用基础 ID，按区域直连。
 
+> 说明：下表中标注「见模型卡」的条目表示本仓库未保存该模型逐区域的官方快照，为避免编造具体区域名，请以对应模型卡的「Regional availability at a glance」为准（见本节末尾链接）。GovCloud 等信息仅在已核实处标出。
+
+| 模型 | `bedrock-mantle`（Metal API）区域 | `bedrock-runtime`（Runtime API）区域 | Geo CRIS | Global CRIS |
+|------|-----------------------------------|--------------------------------------|----------|-------------|
+| GPT-6 Astra | us-east-1、us-west-2（Ultrafast 仅 us-east-1 的 regional Mantle；us-west-2 的 regional Mantle 仅 Standard） | us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、eu-central-1、eu-north-1、eu-west-1/2/3、ap-northeast-1/2/3、ap-south-1、ap-southeast-1/2、sa-east-1 | ✅（`us.`） | ✅（`global.`） |
+| GPT-6.1 Sol | 见模型卡 | 见模型卡 | ✅（`us.`/`eu.`/`apac.` 视模型卡而定） | ✅（`global.`） |
+| GPT-6 Sol | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
+| GPT-6 Luna | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
+| GPT-5.6 Sol | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
+| GPT-5.6 Terra | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
+| GPT-5.6 Luna | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
+| GPT-5.5 | us-east-1、us-east-2 | us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、mx-central-1，eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3，ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、me-central-1、me-south-1、af-south-1、sa-east-1 | ✅（`us.`/`eu.`/`apac.`） | ✅（`global.`） |
+| GPT-5.4 | us-east-1、us-east-2、us-west-2，以及 **us-gov-west-1（GovCloud US-West）** | 与 GPT-5.5 类似的多区域覆盖（GovCloud 为独立分区，见模型卡） | ✅（`us.`/`eu.`/`apac.`） | ✅（`global.`） |
+| GPT OSS Safeguard 120B | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
+| GPT OSS Safeguard 20B | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
+| gpt-oss-120b | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
+| gpt-oss-20b | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
+
+> Daybreak（GPT-5.6 Cyber / Sol）网络安全专用模型需申请 **Trusted Access for Cyber**，其区域以模型卡为准。
+>
 > 完整、权威的区域矩阵请以官方页面为准：
 > - [OpenAI 模型卡总览](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html)（每张卡含「Regional availability at a glance」）
 > - [Regional availability by models](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html)

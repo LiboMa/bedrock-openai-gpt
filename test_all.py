@@ -21,6 +21,7 @@ import sys
 # --- Scripts to syntax-check -------------------------------------------------
 
 SCRIPTS = [
+    "bedrock_endpoints.py",
     "gpt55_responses.py",
     "gpt55_reasoning.py",
     "gpt55_streaming.py",

@@ -13,7 +13,8 @@ Two endpoints expose the OpenAI GPT models on Bedrock:
 
 AWS recommends bedrock-runtime for new applications. Both endpoints expose
 the same base path /openai/v1 and both support the Responses API AND the
-Chat Completions API. This example targets the bedrock-runtime endpoint.
+Chat Completions API. This example targets the bedrock-runtime endpoint with a
+CRIS model ID; bedrock_endpoints.resolve() enforces that pairing.
 
 Prerequisites:
   pip install openai        # openai>=1.78.0
@@ -27,28 +28,22 @@ Environment variables:
 
 import os
 from openai import OpenAI
+from bedrock_endpoints import runtime_base_url, resolve
 
-REGION = os.environ.get("AWS_REGION", "us-east-1")
 # CRIS scope: Geo (us.) stays within the US geography; Global (global.) may
 # route anywhere when there is no data-residency constraint.
 SCOPE = os.environ.get("BEDROCK_SCOPE", "us")
 
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-    # bedrock-runtime endpoint (NOT bedrock-mantle). Base path is /openai/v1.
-    base_url=os.environ.get(
-        "OPENAI_BASE_URL",
-        f"https://bedrock-runtime.{REGION}.amazonaws.com/openai/v1",
-    ),
-)
-
 # On bedrock-runtime the model MUST be a cross-Region inference (CRIS) ID,
 # i.e. prefixed with the scope: us.openai.gpt-6-astra or global.openai.gpt-6-astra.
-model_id = f"{SCOPE}.openai.gpt-6-astra"
+MODEL = f"{SCOPE}.openai.gpt-6-astra"  # CRIS ID -> bedrock-runtime (Runtime API)
+BASE_URL = resolve(MODEL, runtime_base_url())
+
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=BASE_URL)
 
 # 1) Responses API over bedrock-runtime
 response = client.responses.create(
-    model=model_id,
+    model=MODEL,
     input="Explain the main features of Amazon Bedrock in two sentences.",
 )
 print("--- Responses API (bedrock-runtime) ---")
@@ -56,7 +51,7 @@ print(response.output_text)
 
 # 2) Chat Completions API over the same bedrock-runtime endpoint
 completion = client.chat.completions.create(
-    model=model_id,
+    model=MODEL,
     messages=[
         {"role": "system", "content": "You are concise."},
         {"role": "user", "content": "Name one benefit of cross-Region inference."},
