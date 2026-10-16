@@ -17,20 +17,24 @@ Amazon Bedrock 已提供一整套 OpenAI GPT 模型。你可以通过**两种端
 | GPT-5.6 Sol | `openai.gpt-5.6-sol` | 前沿推理与 state-of-the-art agentic 能力，覆盖编码、网络安全与科研 |
 | GPT-5.6 Terra | `openai.gpt-5.6-terra` | 性能对标 GPT-5.5、成本减半，面向大规模日常生产负载 |
 | GPT-5.6 Luna | `openai.gpt-5.6-luna` | 以 OpenAI 最低成本提供快速推理，面向高吞吐任务 |
-| Daybreak Red: GPT-5.6 Cyber | （见模型卡） | 面向漏洞研究、exploit 复现与缓解开发的高度专用模型；**需申请 Trusted Access for Cyber** |
-| Daybreak Blue: GPT-5.6 Sol | （见模型卡） | 面向经核验的防守方开展授权网络安全工作的专用模型；**需申请 Trusted Access for Cyber** |
+| Daybreak Red: GPT-5.6 Cyber | `openai.gpt-5.6-cyber` | 面向漏洞研究、exploit 复现与缓解开发的高度专用模型；**需申请 Trusted Access for Cyber**；仅 `bedrock-mantle` |
+| Daybreak Blue: GPT-5.6 Sol | `openai.gpt-daybreak-blue-5.6-sol` | 面向经核验的防守方开展授权网络安全工作的专用模型；**需申请 Trusted Access for Cyber**；仅 `bedrock-mantle` |
 | GPT-5.5 | `openai.gpt-5.5` | 面向复杂专业工作，适合高级编码、研究、分析与长时 agentic 任务 |
 | GPT-5.4 | `openai.gpt-5.4` | 前沿推理、编码、computer use 与长上下文工作流；**支持 GovCloud (US-West)** |
 | GPT OSS Safeguard 120B | `openai.gpt-oss-safeguard-120b` | 1200 亿参数开源安全模型，用于内容审核与护栏执行 |
 | GPT OSS Safeguard 20B | `openai.gpt-oss-safeguard-20b` | 200 亿参数紧凑版开源安全模型，用于轻量内容审核 |
-| gpt-oss-120b | `openai.gpt-oss-120b` | 1200 亿参数开源通用模型，用于文本生成、编码与推理 |
-| gpt-oss-20b | `openai.gpt-oss-20b` | 200 亿参数开源模型，面向低算力下的高效文本生成与编码 |
+| gpt-oss-120b | `openai.gpt-oss-120b`（`bedrock-runtime` 上为 `openai.gpt-oss-120b-1:0`） | 1200 亿参数开源通用模型，用于文本生成、编码与推理 |
+| gpt-oss-20b | `openai.gpt-oss-20b`（`bedrock-runtime` 上为 `openai.gpt-oss-20b-1:0`） | 200 亿参数开源模型，面向低算力下的高效文本生成与编码 |
 
 > 完整、最新的模型清单见官方 [OpenAI - Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html) 页面。
 
 ## 两种 API 对接方式（重点）
 
-所有模型都可通过两个端点访问，并且在任一端点上都**同时支持 Responses API 与 Chat Completions API**。两者的基础路径都是 `/openai/v1`（注意不是 `/v1`）。
+GPT 系列模型（GPT-6 / 6.1 / 5.6 / 5.5 / 5.4）可通过两个端点访问，并且在两个端点上都**同时支持 Responses API 与 Chat Completions API**，基础路径都是 `/openai/v1`（注意不是 `/v1`）。
+
+> 官方模型卡中的例外（2026-10-16 核实）：
+> - **Daybreak Red / Blue** 仅支持 `bedrock-mantle`，不支持 `bedrock-runtime`。
+> - **GPT OSS 系列**（gpt-oss-120b/20b、GPT OSS Safeguard 120B/20B）：在 `bedrock-mantle` 上 base path 是 **`/v1`**（不是 `/openai/v1`），支持 Responses 与 Chat Completions；在 `bedrock-runtime` 上**不支持 Responses API**，只支持 Chat Completions / Converse / Invoke，且使用 In-Region 的基础 ID（非 CRIS ID）。
 
 ### 1. Metal API —— `bedrock-mantle` 端点（OpenAI 兼容）
 
@@ -46,10 +50,12 @@ Amazon Bedrock 已提供一整套 OpenAI GPT 模型。你可以通过**两种端
 ### 2. Runtime API —— `bedrock-runtime` 端点（标准 Bedrock Runtime）
 
 - **基础 URL**：`https://bedrock-runtime.{region}.amazonaws.com/openai/v1`
-- **模型标识**：必须使用**跨区域推理（CRIS）ID**：
+- **模型标识**：GPT 系列在此端点**不支持 In-Region 调用**，必须使用**跨区域推理（CRIS）ID**：
   - Geo（US 地理）：`us.openai.gpt-5.5`
   - Global：`global.openai.gpt-5.5`
-- 除 OpenAI 兼容的 Responses / Chat Completions 外，`bedrock-runtime` 还支持 Bedrock 原生的 **Converse / Invoke / Messages** 等 API。
+  - GPT-5.6 Terra / Luna 在印度区域（ap-south-1/2）另有 Geo ID：`in.openai.gpt-5.6-terra` / `in.openai.gpt-5.6-luna`
+  - 例外：GPT OSS 系列在此端点使用 In-Region 基础 ID（如 `openai.gpt-oss-120b-1:0`、`openai.gpt-oss-safeguard-120b`），gpt-oss-120b/20b 在 GovCloud 另有 `us-gov.` Geo ID
+- 除 OpenAI 兼容的 Responses / Chat Completions 外，`bedrock-runtime` 还支持 Bedrock 原生的 **Converse**（所有 GPT 模型）与 **Invoke**（GPT-6.1 Sol、GPT-6 Sol、GPT-6 Luna、GPT OSS 系列）。官方模型卡中 OpenAI 模型均**不支持 Messages API**。
 - **AWS 建议新应用优先使用 `bedrock-runtime`**（与 Bedrock 其余能力、CRIS、服务层级等一致）。
 
 | 对比项 | `bedrock-mantle`（Metal API） | `bedrock-runtime`（Runtime API） |
@@ -58,9 +64,9 @@ Amazon Bedrock 已提供一整套 OpenAI GPT 模型。你可以通过**两种端
 | base path | `/openai/v1` | `/openai/v1` |
 | Responses API | ✅ `/openai/v1/responses` | ✅ |
 | Chat Completions API | ✅ `/openai/v1/chat/completions` | ✅ |
-| 模型标识 | 基础 ID（如 `openai.gpt-5.5`） | CRIS ID（如 `us.openai.gpt-5.5` / `global.openai.gpt-5.5`） |
+| 模型标识 | 基础 ID（如 `openai.gpt-5.5`） | CRIS ID（如 `us.openai.gpt-5.5` / `global.openai.gpt-5.5`）；GPT OSS 例外 |
 | 模型发现 | `/v1/models` | 见 Bedrock 模型列表 API |
-| 其他 API | — | Converse / Invoke / Messages |
+| 其他 API | — | Converse；部分模型支持 Invoke（不支持 Messages） |
 | AWS 建议 | OpenAI 兼容直连 | **新应用优先** |
 
 ## 前提条件
@@ -258,15 +264,17 @@ https://bedrock-runtime.{region}.amazonaws.com/openai/v1/chat/completions
 
 | 功能 | 支持情况 |
 |------|----------|
-| Responses API | ✅（两种端点均支持） |
+| Responses API | ✅（两种端点均支持；GPT OSS 系列仅 `bedrock-mantle`） |
 | Chat Completions API | ✅（两种端点均支持） |
-| Converse / Invoke / Messages API | ✅（`bedrock-runtime`） |
+| Converse API | ✅（`bedrock-runtime`） |
+| Invoke API | 部分模型（`bedrock-runtime`：GPT-6.1 Sol、GPT-6 Sol、GPT-6 Luna、GPT OSS 系列） |
+| Messages API | ❌（官方模型卡中 OpenAI 模型均不支持） |
 | 流式输出 (Streaming) | ✅ |
-| 服务端工具调用 | ✅ |
+| 服务端工具调用 | ✅（`bedrock-mantle`；GPT 系列在 `bedrock-runtime` 上不支持） |
 | 客户端工具调用 | ✅ |
-| 图片输入 | ✅ |
+| 图片输入 | ✅（GPT 系列；GPT OSS 系列仅文本） |
 | `bedrock-mantle` 端点（Metal API） | ✅ |
-| `bedrock-runtime` 端点（Runtime API） | ✅（AWS 建议新应用优先） |
+| `bedrock-runtime` 端点（Runtime API） | ✅（AWS 建议新应用优先；Daybreak 不支持） |
 
 ## 可用区域（重点）
 
@@ -276,44 +284,44 @@ https://bedrock-runtime.{region}.amazonaws.com/openai/v1/chat/completions
 - **Geo Cross-Region（Geo CRIS）**：在同一地理范围（US / EU / APAC）内跨区域路由，同时遵守数据驻留
 - **Global Cross-Region（Global CRIS）**：在无数据驻留限制时可路由到全球任意区域
 
-> 使用 `bedrock-runtime` 时请用 CRIS ID：Geo 用 `us.openai.<model>`，Global 用 `global.openai.<model>`。
+> 使用 `bedrock-runtime` 调用 GPT 系列时请用 CRIS ID：Geo 用 `us.openai.<model>`（GPT-5.6 Terra/Luna 在印度区域另有 `in.`），Global 用 `global.openai.<model>`。官方模型卡中 GPT 系列**没有** `eu.` / `apac.` Geo ID，欧洲、亚太等区域只能走 Global CRIS。
 
 ### 各模型可用区域（按模型列出）
 
-下表按**模型**列出 `bedrock-mantle`（Metal API）与 `bedrock-runtime`（Runtime API）两端点的区域覆盖，以及是否适用 Geo / Global CRIS。CRIS 仅在 `bedrock-runtime` 上生效（用 `us.`/`global.` 前缀的 ID）；`bedrock-mantle` 使用基础 ID，按区域直连。
+下表依据 2026-10-16 抓取的各模型卡「Regional availability」整理。`bedrock-mantle` 一列都是 In-Region（基础 ID 直连）；`bedrock-runtime` 一列写的是**源区域**（发起请求的区域），GPT 系列在这些区域只能通过 CRIS 调用。
 
-> 说明：下表中标注「见模型卡」的条目表示本仓库未保存该模型逐区域的官方快照，为避免编造具体区域名，请以对应模型卡的「Regional availability at a glance」为准（见本节末尾链接）。GovCloud 等信息仅在已核实处标出。
+| 模型 | `bedrock-mantle`（Metal API，In-Region） | `bedrock-runtime`（Runtime API）源区域 | Geo CRIS | Global CRIS |
+|------|------------------------------------------|----------------------------------------|----------|-------------|
+| GPT-6 Astra | us-east-1、us-west-2（us-west-2 仅 Standard；Ultrafast 仅 us-east-1） | Geo+Global：us-east-1/2、us-west-1/2、ca-central-1、ca-west-1；仅 Global：eu-central-1、eu-north-1、eu-west-1/2/3、ap-northeast-1/2/3、ap-south-1、ap-southeast-1/2、sa-east-1 | `us.` | `global.` |
+| GPT-6.1 Sol | us-east-1 | US 地理范围（源区域 us-east-1/2、us-west-1/2、ca-central-1、ca-west-1） | `us.` | `global.` |
+| GPT-6 Sol | us-east-1 | Geo+Global：us-east-1/2、us-west-1/2、ca-central-1、ca-west-1；仅 Global：eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3、ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、af-south-1、sa-east-1、mx-central-1 | `us.` | `global.` |
+| GPT-6 Luna | us-east-1 | 同 GPT-6 Sol | `us.` | `global.` |
+| GPT-5.6 Sol | us-east-1、us-east-2 | Geo+Global：us-east-1/2、us-west-1/2、ca-central-1、ca-west-1；仅 Global：eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3、ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、me-central-1、me-south-1、af-south-1、sa-east-1 | `us.` | `global.` |
+| GPT-5.6 Terra | us-east-1、us-east-2、us-west-2，**us-gov-west-1、us-gov-east-1（GovCloud）** | 同 GPT-5.6 Sol；另 ap-south-1/2 支持印度 Geo（`in.`） | `us.` / `in.` | `global.` |
+| GPT-5.6 Luna | us-east-1、us-east-2、us-west-2，**us-gov-west-1、us-gov-east-1（GovCloud）** | 同 GPT-5.6 Terra | `us.` / `in.` | `global.` |
+| Daybreak Red: GPT-5.6 Cyber | us-east-2 | 不支持 | — | — |
+| Daybreak Blue: GPT-5.6 Sol | us-east-2 | 不支持 | — | — |
+| GPT-5.5 | us-east-1、us-east-2 | Geo+Global：us-east-1/2、us-west-1/2、ca-central-1、ca-west-1；仅 Global：mx-central-1、eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3、ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、me-central-1、me-south-1、af-south-1、sa-east-1 | `us.` | `global.` |
+| GPT-5.4 | us-east-1、us-east-2、us-west-2，**us-gov-west-1（GovCloud US-West）** | 同 GPT-5.5 | `us.` | `global.` |
+| gpt-oss-120b / gpt-oss-20b | 模型卡只给出一张合并的 In-Region 表：us-east-1/2、us-west-2、eu-central-1、eu-north-1、eu-south-1、eu-west-1/2、ap-northeast-1/2、ap-south-1、ap-southeast-1/2/3/4、sa-east-1、**us-gov-west-1（GovCloud）** | In-Region（基础 ID `openai.gpt-oss-*-1:0`），区域同左 | GovCloud 内 `us-gov.` | 不支持 |
+| GPT OSS Safeguard 120B / 20B | 模型卡只给出一张合并的 In-Region 表：us-east-1/2、us-west-2、eu-central-1、eu-north-1、eu-south-1、eu-west-1/2、ap-northeast-1/2、ap-south-1、ap-southeast-1/2/3/4、sa-east-1 | In-Region，区域同左 | 不支持 | 不支持 |
 
-| 模型 | `bedrock-mantle`（Metal API）区域 | `bedrock-runtime`（Runtime API）区域 | Geo CRIS | Global CRIS |
-|------|-----------------------------------|--------------------------------------|----------|-------------|
-| GPT-6 Astra | us-east-1、us-west-2（Ultrafast 仅 us-east-1 的 regional Mantle；us-west-2 的 regional Mantle 仅 Standard） | us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、eu-central-1、eu-north-1、eu-west-1/2/3、ap-northeast-1/2/3、ap-south-1、ap-southeast-1/2、sa-east-1 | ✅（`us.`） | ✅（`global.`） |
-| GPT-6.1 Sol | 见模型卡 | 见模型卡 | ✅（`us.`/`eu.`/`apac.` 视模型卡而定） | ✅（`global.`） |
-| GPT-6 Sol | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
-| GPT-6 Luna | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
-| GPT-5.6 Sol | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
-| GPT-5.6 Terra | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
-| GPT-5.6 Luna | 见模型卡 | 见模型卡 | ✅（视模型卡而定） | ✅（`global.`） |
-| GPT-5.5 | us-east-1、us-east-2 | us-east-1/2、us-west-1/2、ca-central-1、ca-west-1、mx-central-1，eu-central-1/2、eu-north-1、eu-south-1/2、eu-west-1/2/3，ap-east-2、ap-northeast-1/2/3、ap-south-1/2、ap-southeast-1~7、il-central-1、me-central-1、me-south-1、af-south-1、sa-east-1 | ✅（`us.`/`eu.`/`apac.`） | ✅（`global.`） |
-| GPT-5.4 | us-east-1、us-east-2、us-west-2，以及 **us-gov-west-1（GovCloud US-West）** | 与 GPT-5.5 类似的多区域覆盖（GovCloud 为独立分区，见模型卡） | ✅（`us.`/`eu.`/`apac.`） | ✅（`global.`） |
-| GPT OSS Safeguard 120B | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
-| GPT OSS Safeguard 20B | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
-| gpt-oss-120b | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
-| gpt-oss-20b | 见模型卡 | 见模型卡 | 视模型卡而定 | 视模型卡而定 |
-
-> Daybreak（GPT-5.6 Cyber / Sol）网络安全专用模型需申请 **Trusted Access for Cyber**，其区域以模型卡为准。
+> Geo CRIS 的目的区域取决于源区域。以 `us.` 为例：源区域 us-east-1/us-east-2/us-west-2 路由到 us-east-1、us-east-2、us-west-2；us-west-1 另含自身；ca-central-1 / ca-west-1 另含自身。准确路由可在源区域调用 [GetInferenceProfile](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GetInferenceProfile.html) 查询。
 >
-> 完整、权威的区域矩阵请以官方页面为准：
-> - [OpenAI 模型卡总览](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html)（每张卡含「Regional availability at a glance」）
+> Daybreak 网络安全专用模型需申请 **Trusted Access for Cyber**。
+>
+> 区域会随官方更新而变化，请以官方页面为准：
+> - [OpenAI 模型卡总览](https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html)（每张卡含「Regional availability」）
 > - [Regional availability by models](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html)
 
 ## 模型参数
 
 | 参数 | 说明 |
 |------|------|
-| 上下文窗口 | **1,050,000 tokens**（其中 272K 为短/长上下文的计费阈值——输入 ≤272K 走短上下文计费，超过则按长上下文计费） |
-| 最大输出 | **128,000 tokens** |
+| 上下文窗口 | **1,050,000 tokens**（GPT-6 Astra / 6 Sol / 6 Luna、GPT-5.6 Sol / Terra / Luna、GPT-5.5、GPT-5.4）。其中 272K 为短/长上下文的计费阈值：输入 ≤272K 走短上下文计费，超过则整个请求按长上下文计费。例外：GPT-6.1 Sol 与 Daybreak Blue 标注 1M，Daybreak Red 标注 272K，GPT OSS 系列 128K |
+| 最大输出 | **128,000 tokens**（同上 GPT 系列）；例外：GPT-6.1 Sol 为 131,072，GPT OSS 系列为 16K |
 | `reasoning.effort` | `low` / `medium` / `high`（控制推理深度） |
-| 服务层级（service_tier） | `default`（Standard）/ `priority` / `flex` / Reserved；GPT-6 Astra 另支持 `ultrafast` |
+| 服务层级（service_tier） | GPT 系列只支持 Standard（`"service_tier": "default"` 或省略）；GPT-6 Astra 与 GPT-6.1 Sol 另支持 `ultrafast`；GPT OSS 系列支持 Standard / Priority / Flex。所有 OpenAI 模型都不支持 Reserved |
 
 ## 定价
 
@@ -326,7 +334,7 @@ https://bedrock-runtime.{region}.amazonaws.com/openai/v1/chat/completions
 
 **Q: `bedrock-mantle` 和 `bedrock-runtime` 有什么区别，该用哪个？**
 
-A: 两者都支持 Responses API 与 Chat Completions API，base path 都是 `/openai/v1`。区别在于：`bedrock-mantle`（Metal API）是 OpenAI 兼容端点，使用基础 Model ID；`bedrock-runtime`（Runtime API）使用跨区域推理 ID（`us.` / `global.` 前缀），并额外支持 Converse / Invoke / Messages。**AWS 建议新应用优先使用 `bedrock-runtime`**。
+A: 两者都支持 Responses API 与 Chat Completions API，base path 都是 `/openai/v1`。区别在于：`bedrock-mantle`（Metal API）是 OpenAI 兼容端点，使用基础 Model ID；`bedrock-runtime`（Runtime API）调用 GPT 系列时使用跨区域推理 ID（`us.` / `global.` 前缀），并额外支持 Converse（部分模型还支持 Invoke）。**AWS 建议新应用优先使用 `bedrock-runtime`**。
 
 **Q: 为什么环境变量叫 `OPENAI_API_KEY` 但用的是 AWS 的 Key？**
 
@@ -342,7 +350,7 @@ A: 追求最强能力选 GPT-6 Astra / GPT-6.1 Sol；复杂编码与 agentic 工
 
 **Q: 上下文窗口到底多大？**
 
-A: 1,050,000 tokens，最大输出 128,000 tokens。文档中的 272K 是短/长上下文的**计费阈值**（输入 ≤272K tokens 按短上下文计费），不是上下文窗口上限。
+A: GPT 系列（GPT-6 Astra / 6 Sol / 6 Luna、GPT-5.6 Sol / Terra / Luna、GPT-5.5、GPT-5.4）为 1,050,000 tokens，最大输出 128,000 tokens（GPT-6.1 Sol、Daybreak、GPT OSS 例外，见「模型参数」）。文档中的 272K 是短/长上下文的**计费阈值**（输入 ≤272K tokens 按短上下文计费），不是上下文窗口上限。
 
 **Q: 数据安全如何保障？**
 
